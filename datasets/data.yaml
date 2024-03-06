@@ -1,0 +1,8 @@
+path: ../datasets/roboflow
+
+train: /content/Drive/MyDrive/Colab Notebooks/caneta-obb/datasets/train/images
+val: /content/Drive/MyDrive/Colab Notebooks/caneta-obb/datasets/valid/images
+test: /content/Drive/MyDrive/Colab Notebooks/caneta-obb/datasets/test/images
+
+nc: 1
+names: ['caneta']

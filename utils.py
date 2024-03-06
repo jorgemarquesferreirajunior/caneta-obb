@@ -243,23 +243,26 @@ class UtilitariosArquivo:
 
     @staticmethod
     def descompactar_arquivo(arquivo_zip, destino, verbose=False):
-        if os.path.exists(os.path.join(destino, "datasets")) and verbose:
-            print(f"A pasta já existe neste destino: {os.path.join(destino, 'datasets')}")
+        destino_zip = os.path.join(destino, "datasets")
+        print("Iniciando a descompactacao...")
+        if os.path.exists(destino_zip) and verbose:
+            print(f"A pasta já existe neste destino: {destino_zip}")
         else:
             try:
                 with ZipFile(arquivo_zip, "r") as arquivo_zipado:
-                    arquivo_zipado.extractall(destino)
+                    arquivo_zipado.extractall(destino_zip)
                 if verbose:
-                    print(f"A pasta {arquivo_zip} foi descompactada com sucesso para {destino}.")
+                    print(f"A pasta {arquivo_zip} foi descompactada com sucesso para {destino_zip}.")
             except Exception as e:
                 print(f"Erro ao extrair {arquivo_zip}: {e}")
-        return os.path.join(destino, "datasets")
+        return destino_zip
 
     @staticmethod
     def compactar_pasta(origem, destino, nome_arquivo):
         try:
-            destino_zip = os.path.join(destino, nome_arquivo + ".zip")
-            print(f"A pasta {origem} foi compactada com sucesso para {destino_zip}.")
+            destino_zip = os.path.join(destino, nome_arquivo)
+            shutil.make_archive(destino_zip, 'zip', origem)
+            print(f"A pasta {origem} \n foi compactada com sucesso para {destino_zip}.")
         except Exception as e:
             print(f"Erro ao compactar {origem}: {e}")
 
