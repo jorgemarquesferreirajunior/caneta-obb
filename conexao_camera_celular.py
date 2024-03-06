@@ -12,8 +12,7 @@ def escalar_img(escala, f):
     
     return f    
     
-    
-    
+
 video = cv2.VideoCapture("http://192.168.25.140:8080/video")
 
 if not video.isOpened():
