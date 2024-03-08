@@ -10,7 +10,7 @@ from zipfile import ZipFile
 # ***************************************************************************************************
 class CapturaCamera:
     @staticmethod
-    def tirar_foto(ip_camera, destino, altura_imagem=640, rotacao=cv2.ROTATE_90_CLOCKWISE):
+    def tirar_foto_jpg(ip_camera, destino, altura_imagem=640, rotacao=cv2.ROTATE_90_CLOCKWISE):
         captura = cv2.VideoCapture(ip_camera)
 
         if not captura.isOpened():
@@ -34,6 +34,31 @@ class CapturaCamera:
                 cv2.imwrite(os.path.join(destino, f"foto({str(item)}).jpg"), frame)
                 print("Foto salva com sucesso!")
             return os.path.join(destino, f"foto({str(item)}).jpg")
+    
+    @staticmethod
+    def tirar_foto_cv2(ip_camera, tamanho_img=640, rotacao=cv2.ROTATE_90_CLOCKWISE):
+        captura = cv2.VideoCapture(ip_camera)
+
+        if not captura.isOpened():
+            print("Erro ao abrir a câmera.")
+            exit()
+
+        while True:
+            sucesso, frame = captura.read()
+
+            if not sucesso:
+                print("Erro ao ler o frame.")
+            else:
+                largura, altura = frame.shape[1], frame.shape[0]
+                proporcao_tela = largura / altura
+                largura_imagem = int(proporcao_tela * tamanho_img)
+
+                frame = cv2.resize(frame, (largura_imagem, tamanho_img))
+                frame = cv2.rotate(frame, rotacao)
+                frame = frame[:tamanho_img, :tamanho_img]
+                return frame
+                
+        
         
         
 # ***************************************************************************************************
@@ -83,6 +108,13 @@ class CompiladorImagem:
         ProcessadorImagem.marcar_caixas(imagem, coordenadas)
         ProcessadorImagem.listar_inclinacoes(imagem, inclinacoes)
         cv2.imwrite(resultado, imagem)
+    
+    @staticmethod
+    def gerar_imagem_resultado_cv2(imagem, centros, coordenadas, inclinacoes, resultado="resultado.jpg"):
+        ProcessadorImagem.enumerar_centros(imagem, centros)
+        ProcessadorImagem.marcar_caixas(imagem, coordenadas)
+        # ProcessadorImagem.listar_inclinacoes(imagem, inclinacoes)
+        cv2.imwrite(resultado, imagem)
         
         
 # ***************************************************************************************************
@@ -90,6 +122,16 @@ class DetectorObjetos:
     def __init__(self, caminho_modelo):
         self.modelo_yolo = YOLO(caminho_modelo)
 
+    def prever_cv2(self, imagem, limiar_acuracia=0.82):
+        
+        resultados_obb = self._resultado_previsao(imagem)
+        confiancas, coordenadas = self._obter_dados_objeto(resultados_obb, limiar_acuracia)
+        centros = self._calcular_centros(coordenadas)
+        coords_ab = self._inverter_eixo_y(coordenadas, imagem.shape[0])
+        inclinacoes = self._calcular_inclinacoes(coords_ab)
+        
+        return confiancas, coordenadas, centros, coords_ab, inclinacoes
+    
     def prever(self, caminho_imagem, limiar_acuracia=0.82):
         imagem = cv2.imread(caminho_imagem)
         resultados_obb = self._resultado_previsao(imagem)
