@@ -20,6 +20,7 @@ path_img_result = os.path.join(dir_resultados, nome_img_result)
 CompiladorImagem.gerar_imagem_resultado_cv2(imagem, centros, coordenadas, inclinacoes, path_img_result)
 
 mensagem = DetectorObjetos.gerar_msg(confiancas, centros, inclinacoes)
+print("")
 print(mensagem)
 
 # caminho_resultados = UtilitariosArquivo.criar_pasta('resultados', HOME)
