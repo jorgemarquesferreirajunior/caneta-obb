@@ -5,7 +5,7 @@ import numpy as np
 import math
 import shutil
 from zipfile import ZipFile
-
+import torch
 
 # ***************************************************************************************************
 class CapturaCamera:
@@ -110,37 +110,39 @@ class CompiladorImagem:
         cv2.imwrite(resultado, imagem)
     
     @staticmethod
-    def gerar_imagem_resultado_cv2(imagem, centros, coordenadas, inclinacoes, resultado="resultado.jpg"):
+    def gerar_imagem_resultado_2(imagem, centros, coordenadas, resultado="resultado.jpg"):
         ProcessadorImagem.enumerar_centros(imagem, centros)
         ProcessadorImagem.marcar_caixas(imagem, coordenadas)
-        # ProcessadorImagem.listar_inclinacoes(imagem, inclinacoes)
         cv2.imwrite(resultado, imagem)
         
         
 # ***************************************************************************************************
 class DetectorObjetos:
-    def __init__(self, caminho_modelo):
+    def __init__(self, caminho_modelo, GPU):
         self.modelo_yolo = YOLO(caminho_modelo)
+        if GPU:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.modelo_yolo.to(device)
 
     def prever_cv2(self, imagem, limiar_acuracia=0.82):
         
         resultados_obb = self._resultado_previsao(imagem)
         confiancas, coordenadas = self._obter_dados_objeto(resultados_obb, limiar_acuracia)
         centros = self._calcular_centros(coordenadas)
-        coords_ab = self._inverter_eixo_y(coordenadas, imagem.shape[0])
-        inclinacoes = self._calcular_inclinacoes(coords_ab)
+        coords_invertidas = self._inverter_eixo_y(coordenadas, imagem.shape[0])
+        inclinacoes = self._calcular_inclinacoes(coords_invertidas)
         
-        return confiancas, coordenadas, centros, coords_ab, inclinacoes
+        return confiancas, coordenadas, centros, coords_invertidas, inclinacoes
     
     def prever(self, caminho_imagem, limiar_acuracia=0.82):
         imagem = cv2.imread(caminho_imagem)
         resultados_obb = self._resultado_previsao(imagem)
         confiancas, coordenadas = self._obter_dados_objeto(resultados_obb, limiar_acuracia)
         centros = self._calcular_centros(coordenadas)
-        coords_ab = self._inverter_eixo_y(coordenadas, imagem.shape[0])
-        inclinacoes = self._calcular_inclinacoes(coords_ab)
+        coords_invertidas = self._inverter_eixo_y(coordenadas, imagem.shape[0])
+        inclinacoes = self._calcular_inclinacoes(coords_invertidas)
         
-        return confiancas, coordenadas, centros, coords_ab, inclinacoes
+        return confiancas, coordenadas, centros, coords_invertidas, inclinacoes
 
     def prever_lista(self, lista_imagens, detector, pasta_resultados, limiar_acuracia=0.85, limpar_pasta_resultados=False):
         if limpar_pasta_resultados:
@@ -149,7 +151,7 @@ class DetectorObjetos:
         confiancas = []
         coordenadas = []
         centros = []
-        coords_ab = []
+        coords_invertidas = []
         inclinacoes = []
         
         for img in lista_imagens:
@@ -157,13 +159,13 @@ class DetectorObjetos:
             confiancas.append(confianca)
             coordenadas.append(coordenada)
             centros.append(centro)
-            coords_ab.append(coord_ab)
+            coords_invertidas.append(coord_ab)
             inclinacoes.append(inclinacao)
             
             caminho_imagem_resultado = os.path.join(pasta_resultados, f"imagem_compilada_{len(os.listdir(pasta_resultados)) + 1}.jpg")
             CompiladorImagem.gerar_imagem_resultado(cv2.imread(img), centro, coordenada, inclinacao, caminho_imagem_resultado)
         print(f"Resultados salvis no caminho {pasta_resultados}")
-        return confiancas, coordenadas, centros, coords_ab, inclinacoes
+        return confiancas, coordenadas, centros, coords_invertidas, inclinacoes
     
     def _resultado_previsao(self, imagem, ):
         return self.modelo_yolo.predict(source=imagem, save=False)[0].obb
@@ -214,17 +216,34 @@ class DetectorObjetos:
         centros = [self._calcular_ponto_medio(sublista[0], sublista[2]) for sublista in coordenadas_int]
         return centros
 
+    # def _inverter_eixo_y(self, coordenadas_int, altura_imagem):
+    #     coordenadas = []
+    #     for sublista in coordenadas_int:
+    #         ponto_a = [sublista[0][0], altura_imagem - sublista[0][1]]
+    #         ponto_b = [sublista[3][0], altura_imagem - sublista[3][1]]
+    #         pontos = [ponto_a, ponto_b]
+    #         coordenadas.append(pontos)
+    #     return coordenadas
+    
     def _inverter_eixo_y(self, coordenadas_int, altura_imagem):
-        coordenadas = []
+        coordenadas_cartesianas = []
         for sublista in coordenadas_int:
-            ponto_a = [sublista[0][0], altura_imagem - sublista[0][1]]
-            ponto_b = [sublista[3][0], altura_imagem - sublista[3][1]]
-            pontos = [ponto_a, ponto_b]
-            coordenadas.append(pontos)
-        return coordenadas
+            nova_sublista = []
+            for subsublista in sublista:
+                novo_ponto = [subsublista[0], altura_imagem - subsublista[1]]
+                nova_sublista.append(novo_ponto)
+            coordenadas_cartesianas.append(nova_sublista)
+        return coordenadas_cartesianas
 
-    def _calcular_inclinacoes(self, coords_ab):
-        inclinacoes = [round(self._calcular_angulo(ponto_a, ponto_b), 2) for ponto_a, ponto_b in coords_ab]
+
+    # def _calcular_inclinacoes(self, coords_invertidas):
+    #     inclinacoes = [round(self._calcular_angulo(ponto_a, ponto_b), 2) for ponto_a, ponto_b in coords_invertidas]
+    #     return inclinacoes
+    
+    def _calcular_inclinacoes(self, coords_invertidas):
+        inclinacoes = []
+        for lista in coords_invertidas:
+            inclinacoes.append(round(self._calcular_angulo(lista[0], lista[3]), 2))
         return inclinacoes
 
     def _calcular_ponto_medio(self, A, B):
@@ -345,3 +364,9 @@ class UtilitariosArquivo:
     def listar_imagens_pasta(caminho_pasta):
         return [os.path.join(caminho_pasta, f) for f in os.listdir(caminho_pasta) if f.endswith((".jpg", ".png"))]
     
+# def VerificarIntersecao(coordenadas_invertidas):
+#     for lista in coordenadas_invertidas:
+#         A, B, C, D = lista[0], lista[1], lista[2], lista[3]
+
+#         for par_coord in lista:
+#             (x1, y1, x2, y2, x3, y3, x4, y4) = *A, *B

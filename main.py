@@ -1,27 +1,39 @@
 from utils import *
+import time
+
+
 
 dir_home = os.getcwd()
-# CAMINHO_CONJUNTO_DADOS = UtilitariosArquivo.descompactar_arquivo(os.path.join(HOME, "caneta-obb.zip"), HOME)
 dir_dataset = os.path.join(dir_home, 'datasets')
 dir_printscreens = os.path.join(dir_home, 'printscreens')
 dir_resultados = os.path.join(dir_home, 'resultados')
 path_modelo = os.path.join(dir_dataset, 'runs', 'obb', 'train', 'weights/best.pt')
 
-detector_objetos = DetectorObjetos(path_modelo)
+detector_objetos = DetectorObjetos(path_modelo, GPU = True)
+print('----------------------------------------------------------------------')
 
-# ip_camera = "http://192.168.0.103:8080/video"
-# imagem = CapturaCamera.tirar_foto_cv2(ip_camera)
+while True:
+    detectar = str(input("Detectar? [S/N]: ")).strip().upper()[0]
+    if detectar == 'S':
+        start = time.time()
 
+        imagem = cv2.imread(os.path.join(dir_printscreens, '00.jpg'))
 
-imagem = cv2.imread(os.path.join(dir_printscreens, '00.jpg'))
-confiancas, coordenadas, centros, coords_ab, inclinacoes = detector_objetos.prever_cv2(imagem)
-nome_img_result = f"imagem_predicao_{str(len(os.listdir(dir_resultados)) + 1).zfill(2)}.jpg"
-path_img_result = os.path.join(dir_resultados, nome_img_result)
-CompiladorImagem.gerar_imagem_resultado_cv2(imagem, centros, coordenadas, inclinacoes, path_img_result)
+        confiancas, coordenadas, centros, coords_ab, inclinacoes = detector_objetos.prever_cv2(imagem)
+        nome_img_result = f"imagem_predicao_{str(len(os.listdir(dir_resultados)) + 1).zfill(2)}.jpg"
+        path_img_result = os.path.join(dir_resultados, nome_img_result)
 
-mensagem = DetectorObjetos.gerar_msg(confiancas, centros, inclinacoes)
-print("")
-print(mensagem)
+        CompiladorImagem.gerar_imagem_resultado_2(imagem, centros, coordenadas, path_img_result)
+
+        mensagem = DetectorObjetos.gerar_msg(confiancas, centros, inclinacoes)
+
+        print("")
+        print(mensagem)
+        end = time.time()
+        print(f"Tempo de Compilacao: {(end - start):.5f} segundos")
+        print('----------------------------------------------------------------------')
+    else:
+        break
 
 # caminho_resultados = UtilitariosArquivo.criar_pasta('resultados', HOME)
 # DIRdataset = os.path.join(HOME, 'datasets')
