@@ -1,0 +1,33 @@
+Comandos Git
+
+
+git config --global --list							# informacoes do usuario
+git config --global user.name "<nome-do-usuario>"	# configurar nome do usuario
+git config --global user.email "<email-usuario>"	# configurar email do usuario
+git init											# inicializar um repositorio git novo ou reiniciar o existente
+git status											# mostra o status do repositorio, se há ou não algum arquivo para adicionar no stage e depois fazer o commit
+git add <nome-do-arquivo>							# adiciona o arquivo no stage. OBS: para adicionar todos os arquivos basta escrever . no lugar do nome do arquivo
+git rm --cached <nome-do-arquivo>					# retirar o arquivo do stage, voltando para edição
+git commit -m "mensagem"							# fazer o commit passand uma mensagem sobre o commit
+git log												# exibe o hostorico de commit
+git log --oneline									# exibe o hostorico de commit com informações mais condensadas
+git checkout <id-do-commit>							# volta na linha do tempo do git para um commit que você desejar. OBS: para voltar ao final da linha do tempo
+													# basta colocar o nome da branch no lugar do <id-do-commit> 
+git revert <id-do-commit>							# exclui um commit específico da linha do tempo 
+git reset <id-do-commit>							# exclui todos os commits posteriores ao commit especificado no comando, mas mantem as alteracoes feitas
+git reset <id-do-commit> --hard						# exlui todos os commits posteriores ao commit especificado no comando e apaga todas as alteracoes feitas
+git branch <nome>									# criar uma branch nova
+git branch -d <nome>								# apagar uma branch vazia
+git branch -D <nome>								# apagar uma branch não vazia que ainda não foi fundida a branch principal
+git merge <branch>									# faz a fusão de uma branch para a branch que estiver no momento
+git push <endereco-repositorio-git.git>				# envia o repositorio local para um no github
+git remote add origin <endereco-repositorio-git.git># mantem o link entre o repositorio local e no github estabelecidos
+git pull origin <branch>							# atualiza o repositorio com os novos commits
+git clone <endereco-repositorio-git.git> </destino>	# baixa/clona o repositorio do github
+
+
+
+Gerando chaves ssh. No terminal:
+	ssh-keygen -t rsa	
+Depois selecionar o arquivo id_rsa.pub para encontrar a chave ssh
+
