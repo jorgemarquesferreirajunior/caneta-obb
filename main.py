@@ -1,78 +1,40 @@
 from utils import *
 import time
-
-
+import numpy as np
+import cv2
 
 dir_home = os.getcwd()
 dir_dataset = os.path.join(dir_home, 'datasets')
 dir_printscreens = os.path.join(dir_home, 'printscreens')
 dir_resultados = os.path.join(dir_home, 'resultados')
 path_modelo = os.path.join(dir_dataset, 'runs', 'obb', 'train', 'weights/best.pt')
-
 detector_objetos = DetectorObjetos(path_modelo, GPU = True)
-print('----------------------------------------------------------------------')
 
+print('----------------------------------------------------------------------')
+cont = 0
+UtilitariosArquivo.esvaziar_pasta(dir_resultados)
 while True:
     detectar = str(input("Detectar? [S/N]: ")).strip().upper()[0]
-    if detectar == 'S':
-        start = time.time()
+    if detectar != 'S': break
 
-        imagem = cv2.imread(os.path.join(dir_printscreens, '00.jpg'))
+    print(f"Deteccao [{str(cont).zfill(2)}]")
 
-        confiancas, coordenadas, centros, coords_ab, inclinacoes = detector_objetos.prever_cv2(imagem)
-        nome_img_result = f"imagem_predicao_{str(len(os.listdir(dir_resultados)) + 1).zfill(2)}.jpg"
-        path_img_result = os.path.join(dir_resultados, nome_img_result)
+    start = time.time()
+    img = f"{str(cont).zfill(2)}.jpg"
+    imagem = cv2.imread(os.path.join(dir_printscreens, img))
+    confiancas, coordenadas, centros, coords_ab, inclinacoes = detector_objetos.prever_cv2(imagem)
+    nome_img_result = f"pred-{str(len(os.listdir(dir_resultados)) + 1).zfill(2)}.jpg"
+    path_img_result = os.path.join(dir_resultados, nome_img_result)
+    deteccoes_unicas, deteccoes_sobrepostas = DetectorObjetos.ordenar_deteccoes(confiancas, centros, coordenadas, coords_ab, inclinacoes)
+    CompiladorImagem.gerar_imagem_resultado_3(imagem, deteccoes_unicas, deteccoes_sobrepostas, path_img_result)
+    mensagem = DetectorObjetos.gerar_msg2(deteccoes_unicas, deteccoes_sobrepostas)
+    print(mensagem)
 
-        CompiladorImagem.gerar_imagem_resultado_2(imagem, centros, coordenadas, path_img_result)
+    cont+=1
+    if cont > 49:
+        cont = 0
 
-        mensagem = DetectorObjetos.gerar_msg(confiancas, centros, inclinacoes)
-
-        print("")
-        print(mensagem)
-        end = time.time()
-        print(f"Tempo de Compilacao: {(end - start):.5f} segundos")
-        print('----------------------------------------------------------------------')
-    else:
-        break
-
-# caminho_resultados = UtilitariosArquivo.criar_pasta('resultados', HOME)
-# DIRdataset = os.path.join(HOME, 'datasets')
-# DIRmodelo = os.path.join(DIRdataset, 'runs/obb/train/weights/best.pt')
-# detector_objetos = DetectorObjetos(DIRmodelo)
-# print(f"CAMINHO_CONJUNTO_DADOS: {CAMINHO_CONJUNTO_DADOS}")
-# print(f"caminho_resultados: {caminho_resultados}")
-# print(f"DIRdataset: {DIRdataset}")
-# print(f"DIRmodelo: {DIRmodelo}")
-#----------------------------------------------------------------------------------------------------------------------------------------
-# prever um pacote de imagens de uma base de dados
-
-# IMAGENS_TESTE = UtilitariosArquivo.listar_imagens_pasta(os.path.join(DIRdataset, 'test', 'images'))
-# lista_confiancas, lista_coordenadas, lista_centros, lista_coords_ab, lista_inclinacoes = detector_objetos.prever_lista(IMAGENS_TESTE, detector_objetos, caminho_resultados, limiar_acuracia=0.81, limpar_pasta_resultados=True)
-#----------------------------------------------------------------------------------------------------------------------------------------
-
-
-#----------------------------------------------------------------------------------------------------------------------------------------
-#  prever uma imagem de uma captura
-
-# ip_camera = "http://192.168.0.103:8080/video"
-# caminho_capturas = UtilitariosArquivo.criar_pasta("capturas", HOME)
-# imagem = CapturaCamera.tirar_foto(ip_camera, caminho_capturas)
-# confiancas, coordenadas, centros, coords_ab, inclinacoes = detector_objetos.prever(imagem)
-# caminho_imagem_resultado = os.path.join(caminho_resultados, f"imagem_compilada_{len(os.listdir(caminho_resultados)) + 1}.jpg")
-# CompiladorImagem.gerar_imagem_resultado(cv2.imread(imagem), centros, coordenadas, inclinacoes, caminho_imagem_resultado)
-#----------------------------------------------------------------------------------------------------------------------------------------
-
-
-#----------------------------------------------------------------------------------------------------------------------------------------
-#  prever uma imagem de uma base de dados
-# imagem = "/home/marks/codes/YOLO/refil-poo/datasets/test/images/37_jpg.rf.a4c23f3c139973b93654f341314c1a44.jpg"
-# confiancas, coordenadas, centros, coords_ab, inclinacoes = detector_objetos.prever(imagem, limiar_acuracia=0.81)
-# caminho_imagem_resultado = os.path.join(caminho_resultados, f"imagem_compilada_{len(os.listdir(caminho_resultados)) + 1}.jpg")
-# CompiladorImagem.gerar_imagem_resultado(cv2.imread(imagem), centros, coordenadas, inclinacoes, caminho_imagem_resultado)
-
-# mensagem = DetectorObjetos.gerar_msg(confiancas, centros, inclinacoes)
-# print(mensagem)
-#----------------------------------------------------------------------------------------------------------------------------------------
-
-# UtilitariosArquivo.esvaziar_pasta(caminho_resultados)
-# UtilitariosArquivo.esvaziar_pasta(caminho_capturas)
+    end = time.time()
+    print(f"Tempo de Compilacao: {((end - start)*1000):.3f} milisegundos")
+    print('----------------------------------------------------------------------')
+   

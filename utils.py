@@ -449,10 +449,3 @@ class UtilitariosArquivo:
     @staticmethod
     def listar_imagens_pasta(caminho_pasta):
         return [os.path.join(caminho_pasta, f) for f in os.listdir(caminho_pasta) if f.endswith((".jpg", ".png"))]
-    
-# def VerificarIntersecao(coordenadas_invertidas):
-#     for lista in coordenadas_invertidas:
-#         A, B, C, D = lista[0], lista[1], lista[2], lista[3]
-
-#         for par_coord in lista:
-#             (x1, y1, x2, y2, x3, y3, x4, y4) = *A, *B
