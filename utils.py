@@ -74,6 +74,17 @@ class ProcessadorImagem:
             cv2.putText(imagem, f"{str(idx+1)}", centro, cv2.FONT_HERSHEY_SIMPLEX, 1, cor, 2)
 
     @staticmethod
+    def enumerar_centros2(imagem, deteccoes_unicas, deteccoes_sobrepostas, cor_u=(0, 0, 255), cor_s=(255, 0, 0)):
+        c = 0
+        for idx, centro in enumerate(deteccoes_unicas):
+            c+=1
+            cv2.putText(imagem, f"{str(idx+1)}", centro[0], cv2.FONT_HERSHEY_SIMPLEX, 1, cor_u, 2)
+        for idx, centro in enumerate(deteccoes_sobrepostas):
+            c+=1
+            cv2.putText(imagem, f"{str(c)}", centro[0], cv2.FONT_HERSHEY_SIMPLEX, 1, cor_s, 2)
+            
+
+    @staticmethod
     def listar_inclinacoes(imagem, inclinacoes, cor=(0, 0, 255)):
         x_pos = 15
         y_pos = 25
@@ -94,6 +105,20 @@ class ProcessadorImagem:
             cv2.line(imagem, p3, p4, cor, 1)
             cv2.line(imagem, p4, p1, cor, 1)
 
+    def marcar_caixas2(imagem, deteccoes_unicas, deteccoes_sobrepostas, cor_u=(0, 0, 255), cor_s=(255, 0, 0)):
+        for pontos in deteccoes_unicas:
+            p1, p2, p3, p4 = tuple(pontos[3][0]), tuple(pontos[3][1]), tuple(pontos[3][2]), tuple(pontos[3][3])
+            cv2.line(imagem, p1, p2, cor_u, 1)
+            cv2.line(imagem, p2, p3, cor_u, 1)
+            cv2.line(imagem, p3, p4, cor_u, 1)
+            cv2.line(imagem, p4, p1, cor_u, 1)
+        for pontos in deteccoes_sobrepostas:
+            p1, p2, p3, p4 = tuple(pontos[3][0]), tuple(pontos[3][1]), tuple(pontos[3][2]), tuple(pontos[3][3])
+            cv2.line(imagem, p1, p2, cor_s, 1)
+            cv2.line(imagem, p2, p3, cor_s, 1)
+            cv2.line(imagem, p3, p4, cor_s, 1)
+            cv2.line(imagem, p4, p1, cor_s, 1)
+
     @staticmethod
     def marcar_inclinacoes(imagem, inclinacoes, centros):
         for idx, inclinacao in enumerate(inclinacoes):
@@ -111,9 +136,17 @@ class CompiladorImagem:
     
     @staticmethod
     def gerar_imagem_resultado_2(imagem, centros, coordenadas, resultado="resultado.jpg"):
-        ProcessadorImagem.enumerar_centros(imagem, centros)
-        ProcessadorImagem.marcar_caixas(imagem, coordenadas)
-        cv2.imwrite(resultado, imagem)
+        img = imagem.copy()
+        ProcessadorImagem.enumerar_centros(img, centros)
+        ProcessadorImagem.marcar_caixas(img, coordenadas)
+        cv2.imwrite(resultado, img)
+
+    @staticmethod
+    def gerar_imagem_resultado_3(imagem, deteccoes_unicas, deteccoes_sobrepostas, resultado="resultado.jpg"):
+        img = imagem.copy()
+        ProcessadorImagem.enumerar_centros2(img, deteccoes_unicas, deteccoes_sobrepostas)
+        ProcessadorImagem.marcar_caixas2(img, deteccoes_unicas, deteccoes_sobrepostas)
+        cv2.imwrite(resultado, img)
         
         
 # ***************************************************************************************************
@@ -164,7 +197,7 @@ class DetectorObjetos:
             
             caminho_imagem_resultado = os.path.join(pasta_resultados, f"imagem_compilada_{len(os.listdir(pasta_resultados)) + 1}.jpg")
             CompiladorImagem.gerar_imagem_resultado(cv2.imread(img), centro, coordenada, inclinacao, caminho_imagem_resultado)
-        print(f"Resultados salvis no caminho {pasta_resultados}")
+        print(f"Resultados salvos no caminho {pasta_resultados}")
         return confiancas, coordenadas, centros, coords_invertidas, inclinacoes
     
     def _resultado_previsao(self, imagem, ):
@@ -215,15 +248,6 @@ class DetectorObjetos:
     def _calcular_centros(self, coordenadas_int):
         centros = [self._calcular_ponto_medio(sublista[0], sublista[2]) for sublista in coordenadas_int]
         return centros
-
-    # def _inverter_eixo_y(self, coordenadas_int, altura_imagem):
-    #     coordenadas = []
-    #     for sublista in coordenadas_int:
-    #         ponto_a = [sublista[0][0], altura_imagem - sublista[0][1]]
-    #         ponto_b = [sublista[3][0], altura_imagem - sublista[3][1]]
-    #         pontos = [ponto_a, ponto_b]
-    #         coordenadas.append(pontos)
-    #     return coordenadas
     
     def _inverter_eixo_y(self, coordenadas_int, altura_imagem):
         coordenadas_cartesianas = []
@@ -234,11 +258,6 @@ class DetectorObjetos:
                 nova_sublista.append(novo_ponto)
             coordenadas_cartesianas.append(nova_sublista)
         return coordenadas_cartesianas
-
-
-    # def _calcular_inclinacoes(self, coords_invertidas):
-    #     inclinacoes = [round(self._calcular_angulo(ponto_a, ponto_b), 2) for ponto_a, ponto_b in coords_invertidas]
-    #     return inclinacoes
     
     def _calcular_inclinacoes(self, coords_invertidas):
         inclinacoes = []
@@ -276,10 +295,77 @@ class DetectorObjetos:
                 delta_y = by - ay
                 return 180 - round(math.degrees(math.atan2(delta_y, delta_x)), 2)
     
+    def gerar_retas(coords_ab, inclinacoes):
+        idx_mais90 = [3,0,2,3,0,1,1,2]
+        idx_menos90 = [0,1,3,0,1,2,2,3]
+        retas_ab = []
+        
+        for i, coord in enumerate(coords_ab):
+            retangulo = []
+            for j in range(len(coord)):   
+                if inclinacoes[i] > 90:
+                    linha = (coord[idx_mais90[j]][0], coord[idx_mais90[j]][1], coord[idx_mais90[j+4]][0], coord[idx_mais90[j+4]][1])
+
+                else:
+                    linha = (coord[idx_menos90[j]][0], coord[idx_menos90[j]][1], coord[idx_menos90[j+4]][0], coord[idx_menos90[j+4]][1])
+                retangulo.append(linha)
+            retas_ab.append(retangulo)
+                
+        return retas_ab
+
+    def buscar_sobreposicoes(retas_ab):
+        sobrepostos = []
+        erro = 3
+        for r, retangulo in enumerate(retas_ab):
+            for l in range(len(retangulo)):
+                for r2 in range(len(retas_ab)):
+                    for l2 in range(len(retangulo)):
+                        if r != r2:
+                            if retas_ab[r] not in sobrepostos:   
+                                m1 = (retas_ab[r][l][3] - retas_ab[r][l][1]) / (retas_ab[r][l][2] - retas_ab[r][l][0] - 0.01)
+                                b1 = round(retas_ab[r][l][1] - m1 * retas_ab[r][l][0])
+                                m2 = (retas_ab[r2][l2][3] - retas_ab[r2][l2][1]) / (retas_ab[r2][l2][2] - retas_ab[r2][l2][0]- 0.01)
+                                b2 = round(retas_ab[r2][l2][1] - m2 * retas_ab[r2][l2][0])
+                                for x1 in range(retas_ab[r][l][0], 1+retas_ab[r][l][2]):
+                                    y1 = round(m1*x1 + b1)
+                                    for x2 in range(retas_ab[r2][l2][0], 1+retas_ab[r2][l2][2]):
+                                        y2 = round(m2*x2 + b2)
+                                        if x1 == x2 and y2-erro < y1 < y2+erro:
+                                            if r not in sobrepostos:
+                                                sobrepostos.append(r)
+                                            if r2 not in sobrepostos:
+                                                sobrepostos.append(r2)
+                                            break
+        return sorted(sobrepostos, reverse=False)
+    
+    def ordenar_deteccoes(confiancas, centros, coordenadas, coords_ab, inclinacoes):
+        itens_sobrepostos = DetectorObjetos.buscar_sobreposicoes(DetectorObjetos.gerar_retas(coords_ab, inclinacoes))
+        deteccoes_unicas = []
+        deteccoes_sobrepostas = []
+
+        for idx, valor in enumerate(centros):
+            deteccao = (valor, confiancas[idx], inclinacoes[idx], coordenadas[idx])
+            if idx not in itens_sobrepostos:
+                deteccoes_unicas.append(deteccao)
+            else:
+                deteccoes_sobrepostas.append(deteccao)
+        return deteccoes_unicas, deteccoes_sobrepostas
+
     def gerar_msg(confiancas, centros, inclinacoes):
         mensagem = ''
         for i, (confianca, inclinacao, centro) in enumerate(zip(confiancas, inclinacoes, centros)):
             mensagem += f"deteccao: {i+1} - confianca:{confianca * 100}%\n" + f"centro: {centro}\n" + f"inclinacao: {inclinacao}\n\n"
+        return mensagem
+    
+    def gerar_msg2(deteccoes_unicas, deteccoes_sobrepostas):
+        mensagem = '\n'
+        c = 0
+        for i, deteccao in enumerate(deteccoes_unicas):
+            c+=1
+            mensagem += f"deteccao: {i+1} - confianca: {deteccao[1] * 100}% - centro: {str(deteccao[0]):<10} - inclinacao: {str(deteccao[2]):<6} - Unica? Sim\n"
+        for i, deteccao in enumerate(deteccoes_sobrepostas):
+            c+=1
+            mensagem += f"deteccao: {c} - confianca: {deteccao[1] * 100}% - centro: {str(deteccao[0]):<10} - inclinacao: {str(deteccao[2]):<6} - Unica? Nao\n"
         return mensagem
 
 

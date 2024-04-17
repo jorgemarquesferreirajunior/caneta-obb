@@ -1,78 +1,13 @@
-def verificar_intersecao(x1, y1, x2, y2, x3, y3, x4, y4):
-    # Calcula os denominadores para 't' e 's'
-    denominador = (abs(y4 - y3) * abs(x2 - x1)) - (abs(x4 - x3) * abs(y2 - y1))
-
-    # Verifica se as linhas são paralelas
-    if denominador == 0:
-        return False
-
-    # Calcula 't' e 's'
-    t = (abs(x4 - x3) * abs(y1 - y3) - abs(y4 - y3) * abs(x1 - x3)) / denominador
-    s = (abs(x2 - x1) * abs(y1 - y3) - abs(y2 - y1) * abs(x1 - x3)) / denominador
-
-    # Verifica se 't' e 's' estão dentro do intervalo [0, 1]
-    if 0 <= t <= 1 and 0 <= s <= 1:
-        return True
-    else:
-        return False
-
-# Exemplo de utilização
-linha1 = (0, 0, 2, 2)
-linha2 = (1, 1, 1, 3)
-
-if verificar_intersecao(*linha1, *linha2):
-    print("As linhas se cruzam.")
-else:
-    print("As linhas não se cruzam.")
-
-
-
-
-
-
-
-
-
-Detectar? [S/N]: s
-
-0: 640x640 8.4ms
-Speed: 4.1ms preprocess, 8.4ms inference, 88.6ms postprocess per image at shape (1, 3, 640, 640)
-
-[[141, 376], [154, 362], [38, 253], [24, 267]]    -->> [[141, 24], [154, 38], [38, 147], [24, 133]]
-[[128, 204], [144, 212], [217, 71], [201, 63]]    -->> [[128, 196], [144, 188], [217, 329], [201, 337]]
-[[228, 333], [243, 332], [240, 177], [225, 177]]  -->> [[228, 67], [243, 68], [240, 223], [225, 223]]
-[[269, 327], [281, 332], [343, 185], [330, 179]]  -->> [[269, 73], [281, 68], [343, 215], [330, 221]]
-[[85, 261], [98, 261], [97, 110], [84, 111]]      -->> [[85, 139], [98, 139], [97, 290], [84, 289]]
-[[190, 385], [209, 382], [185, 230], [166, 233]]  -->> [[190, 15], [209, 18], [185, 170], [166, 167]]
-[[294, 215], [307, 211], [262, 63], [249, 67]]    -->> [[294, 185], [307, 189], [262, 337], [249, 333]]
-deteccao: 1 - confianca:92.0%
-centro: (89, 314)
-inclinacao: 137.03
-
-deteccao: 2 - confianca:91.0%
-centro: (172, 137)
-inclinacao: 62.63
-
-deteccao: 3 - confianca:90.0%
-centro: (234, 255)
-inclinacao: 91.1
-
-deteccao: 4 - confianca:88.0%
-centro: (306, 256)
-inclinacao: 67.6
-
-deteccao: 5 - confianca:87.0%
-centro: (91, 185)
-inclinacao: 90.38
-
-deteccao: 6 - confianca:86.0%
-centro: (187, 307)
-inclinacao: 98.97
-
-deteccao: 7 - confianca:83.0%
-centro: (278, 139)
-inclinacao: 106.91
-
-
-----------------------------------------------------------------------
-Detectar? [S/N]: n
+Coords_ab
+[[[251, 49], [262, 43], [340, 181], [329, 188]], [[82, 137], [83, 121], [241, 128], [240, 144]], [[122, 40], [137, 39], [155, 199], [141, 201]]]
+inclinacoes
+[60.7, 2.54, 83.27]
+Coords yolo
+[[[251, 351], [262, 357], [340, 219], [329, 212]], [[82, 263], [83, 279], [241, 272], [240, 256]], [[122, 360], [137, 361], [155, 201], [141, 199]]]
+Tempo de Compilacao: 41.96024 milisegundos
+Retas_ab
+[[(251, 49, 262, 43), (262, 43, 340, 181), (329, 188, 340, 181), (251, 49, 329, 188)], [(82, 137, 83, 121), (83, 121, 241, 128), (240, 144, 241, 128), (82, 137, 240, 144)], [(122, 40, 137, 39), (137, 39, 155, 199), (141, 201, 155, 199), (122, 40, 141, 201)]]
+Retangulos Sobrepostos: 
+[[251, 49], [262, 43], [340, 181], [329, 188]]
+[[82, 137], [83, 121], [241, 128], [240, 144]]
+[[122, 40], [137, 39], [155, 199], [141, 201]]
